@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: data-store-service
+spec:
+  selector:
+    app: kub-data-store
+  type: LoadBalancer
+  ports:
+    - protocol: 'TCP'
+      port: 80
+      targetPort: 3000
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kub-data-store
+  labels:
+    app: kub-data-store
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kub-data-store
+  template:
+    metadata:
+      labels:
+        app: kub-data-store
+    spec:
+      containers:
+        - name: kub-data-store-container
+          image: shahabu/kub-data-store:latest
+          volumeMounts:
+            - mountPath: /app/story
+              name: content-saver
+          env:
+            - name: STORY_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: data-store-env
+                  key: folder
+          # env:
+          #   - name: STORY_PATH
+          #     value: 'story'
+      volumes:
+        - name: content-saver
+          persistentVolumeClaim:
+            claimName: pv-claim
